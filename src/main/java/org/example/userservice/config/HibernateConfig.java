@@ -41,4 +41,12 @@ public class HibernateConfig {
             System.out.println("SessionFactory закрыт.");
         }
     }
+
+    public static void reinitForTests() {
+        if (sessionFactory != null && !sessionFactory.isClosed()) {
+            sessionFactory.close();
+        }
+        sessionFactory = null;
+        init(); // Пересоздаём с новыми системными свойствами
+    }
 }

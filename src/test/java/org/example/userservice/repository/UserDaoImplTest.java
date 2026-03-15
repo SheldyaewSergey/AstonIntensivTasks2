@@ -4,7 +4,10 @@ import org.example.userservice.config.HibernateConfig;
 import org.example.userservice.exception.UserNotFoundException;
 import org.example.userservice.model.User;
 import org.junit.jupiter.api.*;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,26 +16,33 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class UserDaoImplTest {
+class UserDaoImplTest {
+
+    @Container
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
+            DockerImageName.parse("postgres:15-alpine"))
+            .withDatabaseName("test_db")
+            .withUsername("test")
+            .withPassword("test");
 
     private static UserDao userDao;
     private static User savedUser;
 
     @BeforeAll
-    public static void SetUp() {
-        System.setProperty("hibernate.connection.url",
-                "jdbc:postgresql://localhost:5432/test_db");
-        System.setProperty("hibernate.connection.username", "postgres");
-        System.setProperty("hibernate.connection.password", "secret");
+    static void setUp() {
 
-        HibernateConfig.init();
+        System.setProperty("hibernate.connection.url", postgres.getJdbcUrl());
+        System.setProperty("hibernate.connection.username", postgres.getUsername());
+        System.setProperty("hibernate.connection.password", postgres.getPassword());
+        HibernateConfig.reinitForTests();
+
         userDao = new UserDaoImpl();
     }
 
     @Test
     @Order(1)
     @DisplayName("Сохранение нового пользователя")
-    public void testSave() {
+    void testSave() {
         User user = new User();
         user.setName("Test User");
         user.setEmail("test@example.com");
@@ -43,6 +53,8 @@ public class UserDaoImplTest {
         assertNotNull(saved);
         assertNotNull(saved.getId());
         assertEquals("Test User", saved.getName());
+        assertEquals("test@example.com", saved.getEmail());
+        assertEquals(25, saved.getAge());
         assertNotNull(saved.getCreatedAt());
 
         savedUser = saved;
@@ -51,26 +63,29 @@ public class UserDaoImplTest {
     @Test
     @Order(2)
     @DisplayName("Поиск пользователя по ID")
-    public void testFindById() {
+    void testFindById() {
         Optional<User> found = userDao.findById(savedUser.getId());
 
         assertTrue(found.isPresent());
+        assertEquals("Test User", found.get().getName());
         assertEquals("test@example.com", found.get().getEmail());
     }
 
     @Test
     @Order(3)
     @DisplayName("Поиск несуществующего пользователя")
-    public void testFindByIdNotFound() {
+    void testFindByIdNotFound() {
         Optional<User> found = userDao.findById(9999L);
+
         assertFalse(found.isPresent());
     }
 
     @Test
     @Order(4)
     @DisplayName("Получение всех пользователей")
-    public void testFindAll() {
+    void testFindAll() {
         List<User> users = userDao.findAll();
+
         assertFalse(users.isEmpty());
         assertTrue(users.size() >= 1);
     }
@@ -78,7 +93,7 @@ public class UserDaoImplTest {
     @Test
     @Order(5)
     @DisplayName("Обновление пользователя")
-    public void testUpdate() {
+    void testUpdate() {
         savedUser.setName("Updated Name");
         savedUser.setAge(30);
 
@@ -86,12 +101,13 @@ public class UserDaoImplTest {
 
         assertEquals("Updated Name", updated.getName());
         assertEquals(30, updated.getAge());
+        assertEquals(savedUser.getId(), updated.getId());
     }
 
     @Test
     @Order(6)
     @DisplayName("Обновление несуществующего пользователя")
-    public void testUpdateNotFound() {
+    void testUpdateNotFound() {
         User user = new User();
         user.setId(9999L);
         user.setName("Fake");
@@ -104,7 +120,7 @@ public class UserDaoImplTest {
     @Test
     @Order(7)
     @DisplayName("Удаление пользователя")
-    public void testDelete() {
+    void testDelete() {
         userDao.delete(savedUser.getId());
 
         Optional<User> deleted = userDao.findById(savedUser.getId());
@@ -114,12 +130,12 @@ public class UserDaoImplTest {
     @Test
     @Order(8)
     @DisplayName("Удаление несуществующего пользователя")
-    public void testDeleteNotFound() {
+    void testDeleteNotFound() {
         assertThrows(UserNotFoundException.class, () -> userDao.delete(9999L));
     }
 
     @AfterAll
-    public static void tearDown() {
+    static void tearDown() {
         HibernateConfig.close();
     }
 }

@@ -1,16 +1,13 @@
-package org.example.userservice.model;
+package org.example.userservice.dto;
 
 import lombok.*;
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
-@Builder
-public class UserDto {
-
+public class UserResponseDto {
     private Long id;
     private String name;
     private String email;

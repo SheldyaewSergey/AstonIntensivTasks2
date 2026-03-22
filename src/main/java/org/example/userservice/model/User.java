@@ -1,18 +1,16 @@
 package org.example.userservice.model;
 
+import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-
-import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@Builder
 public class User {
 
     @Id

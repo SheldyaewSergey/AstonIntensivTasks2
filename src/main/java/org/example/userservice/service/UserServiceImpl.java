@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.userservice.dto.UserCreateDto;
 import org.example.userservice.dto.UserResponseDto;
 import org.example.userservice.dto.UserUpdateDto;
+import org.example.userservice.exception.DuplicateEmailException;
 import org.example.userservice.exception.UserNotFoundException;
 import org.example.userservice.mapper.UserMapper;
 import org.example.userservice.model.User;
@@ -24,8 +25,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponseDto createUser(UserCreateDto dto) {
+
+        if (userRepository.existsByEmail(dto.getEmail())) {
+            throw new DuplicateEmailException(dto.getEmail());
+        }
+
         User user = userMapper.toEntity(dto);
         User saved = userRepository.save(user);
+
         return userMapper.toResponseDto(saved);
     }
 
@@ -48,6 +55,11 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto updateUser(Long id, UserUpdateDto dto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
+
+        if (!user.getEmail().equals(dto.getEmail())
+                && userRepository.existsByEmail(dto.getEmail())) {
+            throw new DuplicateEmailException(dto.getEmail());
+        }
 
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());

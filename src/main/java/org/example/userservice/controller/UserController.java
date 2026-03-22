@@ -2,6 +2,7 @@ package org.example.userservice.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.userservice.dto.UserCreateDto;
 import org.example.userservice.dto.UserResponseDto;
 import org.example.userservice.dto.UserUpdateDto;
@@ -15,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@Slf4j
 public class UserController {
 
     private final UserService userService;

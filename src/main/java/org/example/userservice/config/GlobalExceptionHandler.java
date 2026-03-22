@@ -1,5 +1,6 @@
 package org.example.userservice.config;
 
+import org.example.userservice.exception.DuplicateEmailException;
 import org.example.userservice.exception.UserNotFoundException;
 import org.example.userservice.exception.ValidationException;
 import org.springframework.http.ResponseEntity;
@@ -16,13 +17,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleUserNotFound(UserNotFoundException ex) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", 404);
-        error.put("error", "Not Found");
-        error.put("message", ex.getMessage());
+        return buildResponse(404, "Not Found", ex.getMessage());
+    }
 
-        return ResponseEntity.status(404).body(error);
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<Map<String, Object>> handleDuplicateEmail(DuplicateEmailException ex) {
+        return buildResponse(409, "Conflict", ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -36,6 +36,7 @@ public class GlobalExceptionHandler {
         ex.getBindingResult().getFieldErrors().forEach(fieldError ->
                 validationErrors.put(fieldError.getField(), fieldError.getDefaultMessage())
         );
+
         error.put("validationErrors", validationErrors);
 
         return ResponseEntity.badRequest().body(error);
@@ -43,25 +44,22 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<Map<String, Object>> handleValidationException(ValidationException ex) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", 400);
-        error.put("error", "Bad Request");
-        error.put("message", ex.getMessage());
-
-        return ResponseEntity.badRequest().body(error);
+        return buildResponse(400, "Bad Request", ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", 500);
-        error.put("error", "Internal Server Error");
-        error.put("message", "Произошла непредвиденная ошибка");
-
         ex.printStackTrace();
+        return buildResponse(500, "Internal Server Error", "Произошла непредвиденная ошибка");
+    }
 
-        return ResponseEntity.status(500).body(error);
+    private ResponseEntity<Map<String, Object>> buildResponse(int status, String error, String message) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", status);
+        body.put("error", error);
+        body.put("message", message);
+
+        return ResponseEntity.status(status).body(body);
     }
 }

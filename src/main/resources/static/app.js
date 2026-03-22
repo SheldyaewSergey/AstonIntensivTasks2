@@ -1,4 +1,4 @@
-const API_BASE = '/api/users';
+const API_BASE = 'http://localhost:8080/api/users';
 
 const form = document.getElementById('userForm');
 const formTitle = document.getElementById('formTitle');
